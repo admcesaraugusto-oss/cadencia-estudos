@@ -165,7 +165,7 @@ const KEY = 'cadencia-estudos-cesar';
 
 /* blocos com previsto vs realizado */
 const TRACKED = [
-  {id:'teoria', label:'Teoria',     unit:'min',      metaLabel:'minutos', color:'estudo'},
+  {id:'teoria', label:'Teoria',     unit:'páginas',  metaLabel:'páginas', color:'estudo'},
   {id:'quest',  label:'Questões',   unit:'questões', metaLabel:'questões', color:'estudo'},
   {id:'flash',  label:'Flashcards', unit:'cards',    metaLabel:'cards',   color:'estudo'}
 ];
@@ -403,7 +403,7 @@ function weekPlanCard(){
       sel.disabled = (role==='mentor');
       sel.onchange=()=>{ plan[iso][t.id].tema=sel.value; };
       const num=document.createElement('input'); num.className='num'; num.type='number'; num.min='0';
-      num.placeholder=t.unit==='min'?'min':'qtd';
+      num.placeholder=t.unit==='páginas'?'págs':'qtd';
       num.value=plan[iso][t.id].meta||'';
       num.disabled = (role==='mentor');
       num.oninput=()=>{ plan[iso][t.id].meta=num.value; };
@@ -696,7 +696,7 @@ function dayCard(){
         sel.innerHTML='<option value="">Tema...</option>'+opts.map(s=>`<option${r.tema===s?' selected':''}>${s}</option>`).join('');
         sel.onchange=()=>{ r.tema=sel.value; DB.days[selDate]=rec; };
         const num=document.createElement('input'); num.className='num'; num.type='number'; num.min='0';
-        num.placeholder=t.unit==='min'?'min':'qtd';
+        num.placeholder=t.unit==='páginas'?'págs':'qtd';
         num.value=r.feito||'';
         num.oninput=()=>{ r.feito=num.value; DB.days[selDate]=rec; };
         row.appendChild(tag); row.appendChild(sel); row.appendChild(num);
