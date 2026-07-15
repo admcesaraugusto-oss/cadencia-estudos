@@ -83,6 +83,28 @@ label.small{font-size:12.5px;font-weight:600;color:var(--muted);text-transform:u
 .legend div{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
 .dot{width:13px;height:13px;border-radius:4px}
 
+/* ---------- abas ---------- */
+.tabs{display:flex;gap:6px;margin-bottom:14px;background:#fff;padding:5px;border-radius:12px;border:1px solid var(--line)}
+.tabs button{flex:1;padding:9px 6px;border:none;background:transparent;color:var(--muted);border-radius:9px;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+.tabs button.on{background:var(--navy);color:#fff}
+
+/* ---------- previsto x realizado ---------- */
+.pvr{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}
+.pvr-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.pvr-h b{font-size:14.5px}
+.badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;color:#fff}
+.pvr-row{display:flex;gap:8px;align-items:center;margin-bottom:7px}
+.pvr-row span.tag{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;width:62px;flex-shrink:0;letter-spacing:.3px}
+.pvr-row select,.pvr-row input{border:1px solid var(--line);border-radius:8px;padding:8px 9px;font-family:inherit;font-size:13.5px;background:#fff;color:var(--ink);min-width:0}
+.pvr-row select{flex:1}
+.pvr-row input.num{width:74px;text-align:center}
+.pvr-plan{background:var(--bg);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--muted);margin-bottom:7px}
+.pvr-plan b{color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:6px 12px;font-size:13px;display:flex;align-items:center;gap:7px}
+.chip button{border:none;background:transparent;color:var(--bad);cursor:pointer;font-size:15px;line-height:1;padding:0}
+.wk-day{border-left:4px solid var(--estudo);background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:9px}
+.wk-day h4{font-family:'Barlow Condensed',sans-serif;font-size:17px;text-transform:uppercase;color:var(--navy);margin-bottom:8px;letter-spacing:.4px}
 .loading{text-align:center;padding:60px 20px;color:var(--muted)}
 .spin{width:34px;height:34px;border:4px solid var(--line);border-top-color:var(--estudo);border-radius:50%;margin:0 auto 14px;animation:sp 1s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
@@ -141,9 +163,34 @@ const HOURS = {audio1:1, flash:0.33, quest:1, teoria:1.5, rev:0.5, estudo:3, pla
 const DAYNAMES = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const KEY = 'cadencia-estudos-cesar';
 
-let DB = {days:{}};
+/* blocos com previsto vs realizado */
+const TRACKED = [
+  {id:'teoria', label:'Teoria',     unit:'min',      metaLabel:'minutos', color:'estudo'},
+  {id:'quest',  label:'Questões',   unit:'questões', metaLabel:'questões', color:'estudo'},
+  {id:'flash',  label:'Flashcards', unit:'cards',    metaLabel:'cards',   color:'estudo'}
+];
+const SUBJECTS_DEFAULT = [
+  'Direito Administrativo','Direito Constitucional','AFO','Controle Externo',
+  'Auditoria','Contabilidade Pública','Direito Civil','Direito Processual Civil',
+  'Administração Pública','Português','Raciocínio Lógico','Informática'
+];
+
+let DB = {days:{}, plans:{}, subjects:null};
 let role = 'cesar';
 let selDate = todayISO();
+let tab = 'hoje'; // hoje | planejar | materias
+
+function subjects(){ return (DB.subjects && DB.subjects.length) ? DB.subjects : SUBJECTS_DEFAULT; }
+/* segunda-feira da semana que contém a data */
+function weekKey(iso){
+  const d = dateFromISO(iso); const dow=(d.getDay()+6)%7;
+  d.setDate(d.getDate()-dow);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function planFor(iso){
+  const wk = DB.plans && DB.plans[weekKey(iso)];
+  return (wk && wk[iso]) ? wk[iso] : null;
+}
 
 function todayISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function dateFromISO(iso){ const [y,m,d]=iso.split('-').map(Number); return new Date(y,m-1,d); }
@@ -193,13 +240,22 @@ async function remoteSet(val){
 }
 /* mescla o remoto no DB local; em conflito de campo, o local (quem está editando) vence */
 function mergeRemote(remote){
-  if(!remote || !remote.days) return;
-  for(const [iso, rday] of Object.entries(remote.days)){
+  if(!remote) return;
+  DB.days = DB.days||{}; DB.plans = DB.plans||{};
+  for(const [iso, rday] of Object.entries(remote.days||{})){
     if(!DB.days[iso]){ DB.days[iso] = rday; continue; }
     const l = DB.days[iso];
     l.items = Object.assign({}, rday.items||{}, l.items||{});
+    l.real  = Object.assign({}, rday.real||{},  l.real||{});
     ['studied','reason','note','mentorNote'].forEach(f=>{ if(!l[f] && rday[f]) l[f]=rday[f]; });
   }
+  for(const [wk, rweek] of Object.entries(remote.plans||{})){
+    if(!DB.plans[wk]){ DB.plans[wk] = rweek; continue; }
+    for(const [iso, rday] of Object.entries(rweek)){
+      if(!DB.plans[wk][iso]) DB.plans[wk][iso] = rday;
+    }
+  }
+  if(!DB.subjects && remote.subjects) DB.subjects = remote.subjects;
 }
 function cacheLocal(){ try{ localStorage.setItem(KEY, JSON.stringify(DB)); }catch(e){} }
 
@@ -253,6 +309,9 @@ function render(){
   app.innerHTML = '';
   if(!CFG){ app.appendChild(setupCard()); return; }
   app.appendChild(syncBadge());
+  app.appendChild(tabsBar());
+  if(tab==='planejar'){ app.appendChild(weekPlanCard()); return; }
+  if(tab==='materias'){ app.appendChild(subjectsCard()); return; }
   app.appendChild(cadenceCard());
   app.appendChild(dayCard());
   app.appendChild(historyCard());
@@ -274,6 +333,146 @@ function render(){
   n.className='note-share';
   n.textContent = 'Os registros são sincronizados entre os aparelhos conectados. Mantenha o link de convite restrito a você e ao mentor.';
   app.appendChild(n);
+}
+
+function tabsBar(){
+  const el = document.createElement('div'); el.className='tabs';
+  const defs = [['hoje','Dia a dia'],['planejar','Planejar semana'],['materias','Matérias']];
+  defs.forEach(([id,label])=>{
+    if(id==='materias' && role==='mentor') return;
+    const b=document.createElement('button'); b.textContent=label;
+    if(tab===id) b.classList.add('on');
+    b.onclick=()=>{ tab=id; render(); window.scrollTo({top:0}); };
+    el.appendChild(b);
+  });
+  return el;
+}
+
+/* ---------- planejamento semanal ---------- */
+function weekPlanCard(){
+  const el = document.createElement('div'); el.className='card';
+  const wk = weekKey(selDate);
+  DB.plans = DB.plans||{}; DB.plans[wk] = DB.plans[wk]||{};
+  const plan = DB.plans[wk];
+  const start = dateFromISO(wk);
+  const end = new Date(start); end.setDate(end.getDate()+6);
+  const fmt = d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+
+  el.innerHTML = `<div class="cad-title"><h2>Planejar semana</h2><span>${fmt(start)} a ${fmt(end)}</span></div>
+  <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px">Defina o previsto de cada dia. Domingo, no bloco 21h-22h, é o momento ideal para isso. Depois é só registrar o realizado no dia a dia.</p>`;
+
+  if(role==='mentor'){
+    const w=document.createElement('div'); w.className='mentorbox';
+    w.innerHTML='<b>Modo mentor</b>O planejamento é definido pelo Cesar. Aqui você acompanha o previsto de cada dia.';
+    el.appendChild(w);
+  }
+
+  const nav = document.createElement('div'); nav.style.cssText='display:flex;gap:8px;margin-bottom:14px';
+  [['◀ Semana anterior',-7],['Próxima semana ▶',7]].forEach(([t,delta])=>{
+    const b=document.createElement('button'); b.className='btn';
+    b.style.cssText='flex:1;background:var(--bg);color:var(--navy);font-size:13px;padding:8px';
+    b.textContent=t;
+    b.onclick=()=>{ const d=dateFromISO(selDate); d.setDate(d.getDate()+delta);
+      selDate=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      render(); };
+    nav.appendChild(b);
+  });
+  el.appendChild(nav);
+
+  for(let i=0;i<7;i++){
+    const d=new Date(start); d.setDate(d.getDate()+i);
+    const iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const type=dayType(iso);
+    const box=document.createElement('div'); box.className='wk-day';
+    if(type==='sexta'){ box.style.borderLeftColor='var(--familia)'; }
+    const h=document.createElement('h4');
+    h.textContent=DAYNAMES[d.getDay()]+' '+fmt(d)+(type==='sexta'?' · Dia da Família':'');
+    box.appendChild(h);
+    if(type==='sexta'){
+      const p=document.createElement('div'); p.style.cssText='font-size:13px;color:var(--familia);font-weight:600';
+      p.textContent='Sem estudo previsto. Dia protegido.';
+      box.appendChild(p); el.appendChild(box); continue;
+    }
+    plan[iso]=plan[iso]||{};
+    TRACKED.forEach(t=>{
+      plan[iso][t.id]=plan[iso][t.id]||{tema:'',meta:''};
+      const row=document.createElement('div'); row.className='pvr-row';
+      const tag=document.createElement('span'); tag.className='tag'; tag.textContent=t.label;
+      const sel=document.createElement('select');
+      sel.innerHTML='<option value="">Tema...</option>'+subjects().map(s=>`<option${plan[iso][t.id].tema===s?' selected':''}>${s}</option>`).join('');
+      sel.disabled = (role==='mentor');
+      sel.onchange=()=>{ plan[iso][t.id].tema=sel.value; };
+      const num=document.createElement('input'); num.className='num'; num.type='number'; num.min='0';
+      num.placeholder=t.unit==='min'?'min':'qtd';
+      num.value=plan[iso][t.id].meta||'';
+      num.disabled = (role==='mentor');
+      num.oninput=()=>{ plan[iso][t.id].meta=num.value; };
+      row.appendChild(tag); row.appendChild(sel); row.appendChild(num);
+      box.appendChild(row);
+    });
+    el.appendChild(box);
+  }
+
+  if(role!=='mentor'){
+    const bar=document.createElement('div'); bar.className='savebar';
+    const btn=document.createElement('button'); btn.className='btn'; btn.textContent='Salvar planejamento';
+    const msg=document.createElement('span'); msg.className='savemsg'; msg.textContent='Salvo ✓';
+    btn.onclick=()=>{ save(btn,msg); };
+    bar.appendChild(btn); bar.appendChild(msg);
+    el.appendChild(bar);
+    const cp=document.createElement('button'); cp.className='btn';
+    cp.style.cssText='background:var(--bg);color:var(--navy);margin-top:10px;font-size:13px;padding:9px 14px';
+    cp.textContent='Copiar plano da semana anterior';
+    cp.onclick=()=>{
+      const prev=new Date(start); prev.setDate(prev.getDate()-7);
+      const pk=prev.getFullYear()+'-'+String(prev.getMonth()+1).padStart(2,'0')+'-'+String(prev.getDate()).padStart(2,'0');
+      const src=DB.plans[pk];
+      if(!src){ alert('Não há plano salvo na semana anterior.'); return; }
+      Object.entries(src).forEach(([piso,pday])=>{
+        const d=dateFromISO(piso); d.setDate(d.getDate()+7);
+        const niso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        plan[niso]=JSON.parse(JSON.stringify(pday));
+      });
+      render();
+    };
+    el.appendChild(cp);
+  }
+  return el;
+}
+
+/* ---------- matérias ---------- */
+function subjectsCard(){
+  const el=document.createElement('div'); el.className='card';
+  el.innerHTML=`<div class="cad-title"><h2>Minhas matérias</h2></div>
+  <p style="font-size:13.5px;color:var(--muted);margin-bottom:12px">Esta lista alimenta os temas do planejamento. Ajuste conforme o edital do seu concurso alvo.</p>`;
+  const list=document.createElement('div'); list.className='chips';
+  DB.subjects = DB.subjects || SUBJECTS_DEFAULT.slice();
+  DB.subjects.forEach((s,i)=>{
+    const c=document.createElement('div'); c.className='chip';
+    c.innerHTML='<span>'+s.replace(/</g,'&lt;')+'</span>';
+    const x=document.createElement('button'); x.textContent='×'; x.title='Remover';
+    x.onclick=()=>{ DB.subjects.splice(i,1); render(); };
+    c.appendChild(x); list.appendChild(c);
+  });
+  el.appendChild(list);
+  const row=document.createElement('div'); row.style.cssText='display:flex;gap:8px;margin-top:14px';
+  const inp=document.createElement('input');
+  inp.placeholder='Nova matéria...';
+  inp.style.cssText='flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px';
+  const add=document.createElement('button'); add.className='btn'; add.textContent='Adicionar';
+  const doAdd=()=>{ const v=inp.value.trim();
+    if(v && !DB.subjects.includes(v)){ DB.subjects.push(v); render(); } };
+  add.onclick=doAdd;
+  inp.onkeydown=(e)=>{ if(e.key==='Enter') doAdd(); };
+  row.appendChild(inp); row.appendChild(add);
+  el.appendChild(row);
+  const bar=document.createElement('div'); bar.className='savebar';
+  const btn=document.createElement('button'); btn.className='btn'; btn.textContent='Salvar matérias';
+  const msg=document.createElement('span'); msg.className='savemsg'; msg.textContent='Salvo ✓';
+  btn.onclick=()=>{ save(btn,msg); };
+  bar.appendChild(btn); bar.appendChild(msg);
+  el.appendChild(bar);
+  return el;
 }
 
 function syncBadge(){
@@ -355,7 +554,17 @@ function shareWeek(){
     const rec=DB.days[iso]||{};
     const name=DAYNAMES[d.getDay()].slice(0,3)+' '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
     lines.push('*'+name+'*: '+(p===null?'sem registro':p+'% cumprido, '+h.toFixed(1).replace('.',',')+'h de estudo'));
-    if(rec.studied) lines.push('  Estudei: '+rec.studied);
+    const plan = planFor(iso);
+    TRACKED.forEach(t=>{
+      const pl = plan && plan[t.id] ? plan[t.id] : null;
+      const rl = rec.real && rec.real[t.id] ? rec.real[t.id] : null;
+      if(!pl && !rl) return;
+      if(!(pl&&(pl.tema||pl.meta)) && !(rl&&(rl.tema||rl.feito))) return;
+      const prev = pl&&(pl.tema||pl.meta) ? (pl.tema||'tema livre')+(pl.meta?' ('+pl.meta+' '+t.metaLabel+')':'') : 'sem plano';
+      const real = rl&&(rl.tema||rl.feito) ? (rl.tema||'sem tema')+(rl.feito?' ('+rl.feito+' '+t.metaLabel+')':'') : 'não realizado';
+      lines.push('  '+t.label+': previsto '+prev+' | feito '+real);
+    });
+    if(rec.studied) lines.push('  Obs.: '+rec.studied);
     const jr = rec.reason||rec.note;
     if(jr) lines.push('  Justificativa: '+jr);
   }
@@ -444,8 +653,74 @@ function dayCard(){
     el.appendChild(row);
   });
 
+  // ----- previsto vs realizado -----
+  if(type!=='sexta'){
+    const plan = planFor(selDate);
+    const lp = document.createElement('label'); lp.className='small';
+    lp.textContent='Previsto vs. realizado';
+    el.appendChild(lp);
+    rec.real = rec.real || {};
+    if(!plan && role==='cesar'){
+      const w=document.createElement('div'); w.className='pvr-plan';
+      w.innerHTML='Sem plano definido para este dia. Vá em <b>Planejar semana</b> para registrar o previsto, ou preencha só o realizado abaixo.';
+      el.appendChild(w);
+    }
+    TRACKED.forEach(t=>{
+      const p = plan && plan[t.id] ? plan[t.id] : null;
+      rec.real[t.id] = rec.real[t.id] || {tema:'', feito:''};
+      const r = rec.real[t.id];
+      const box=document.createElement('div'); box.className='pvr';
+      const head=document.createElement('div'); head.className='pvr-h';
+      const nm=document.createElement('b'); nm.textContent=t.label;
+      head.appendChild(nm);
+      // badge de cumprimento
+      if(p && p.meta && r.feito!==''){
+        const ratio = Number(r.feito)/Number(p.meta);
+        const bd=document.createElement('span'); bd.className='badge';
+        bd.style.background = ratio>=1?'var(--ok)':ratio>=0.6?'var(--warn)':'var(--bad)';
+        bd.textContent = Math.round(ratio*100)+'% da meta';
+        head.appendChild(bd);
+      }
+      box.appendChild(head);
+      if(p && (p.tema||p.meta)){
+        const pl=document.createElement('div'); pl.className='pvr-plan';
+        pl.innerHTML='Previsto: <b>'+(p.tema||'tema livre')+'</b>'+(p.meta?' · <b>'+p.meta+' '+t.metaLabel+'</b>':'');
+        box.appendChild(pl);
+      }
+      if(role==='cesar'){
+        const row=document.createElement('div'); row.className='pvr-row';
+        const tag=document.createElement('span'); tag.className='tag'; tag.textContent='Feito';
+        const sel=document.createElement('select');
+        const opts = subjects().slice();
+        if(p && p.tema && !opts.includes(p.tema)) opts.unshift(p.tema);
+        sel.innerHTML='<option value="">Tema...</option>'+opts.map(s=>`<option${r.tema===s?' selected':''}>${s}</option>`).join('');
+        sel.onchange=()=>{ r.tema=sel.value; DB.days[selDate]=rec; };
+        const num=document.createElement('input'); num.className='num'; num.type='number'; num.min='0';
+        num.placeholder=t.unit==='min'?'min':'qtd';
+        num.value=r.feito||'';
+        num.oninput=()=>{ r.feito=num.value; DB.days[selDate]=rec; };
+        row.appendChild(tag); row.appendChild(sel); row.appendChild(num);
+        box.appendChild(row);
+        if(p && p.tema && r.tema && r.tema!==p.tema){
+          const alert=document.createElement('div');
+          alert.style.cssText='font-size:12px;color:var(--warn);font-weight:600;margin-top:5px';
+          alert.textContent='Tema diferente do previsto. Vale justificar abaixo.';
+          box.appendChild(alert);
+        }
+      } else {
+        const rd=document.createElement('div'); rd.className='pvr-plan';
+        rd.style.background='#F0F6F1';
+        rd.innerHTML = (r.tema||r.feito)
+          ? 'Realizado: <b>'+(r.tema||'sem tema')+'</b>'+(r.feito?' · <b>'+r.feito+' '+t.metaLabel+'</b>':'')
+          : '<i>Sem registro de realizado.</i>';
+        box.appendChild(rd);
+      }
+      el.appendChild(box);
+    });
+  }
+
   // registro de estudo do Cesar
-  const l1 = document.createElement('label'); l1.className='small'; l1.textContent='O que foi estudado hoje';
+  const l1 = document.createElement('label'); l1.className='small'; l1.textContent='Observações do dia';
   el.appendChild(l1);
   if(role==='cesar'){
     const ta = document.createElement('textarea'); ta.value = rec.studied||'';
