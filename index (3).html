@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#192D4B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cadência">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Cadência de Estudos | Cesar Augusto</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#192D4B; --navy-2:#24456B;
+  --estudo:#1E5AA0; --familia:#2E8B57; --fisico:#C87828; --sono:#5A468C;
+  --bg:#EEF1F5; --card:#FFFFFF; --ink:#1B2430; --muted:#68717E;
+  --line:#DCE2EA; --ok:#2E8B57; --warn:#C87828; --bad:#B4433A;
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.45}
+.wrap{max-width:760px;margin:0 auto;padding:0 14px 60px}
+
+/* ---------- header ---------- */
+header{background:var(--navy);color:#fff;padding:22px 14px 18px;margin-bottom:18px}
+.hwrap{max-width:760px;margin:0 auto}
+h1{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:34px;letter-spacing:.5px;text-transform:uppercase;line-height:1}
+.hsub{color:#B9C6DA;font-size:14px;margin-top:4px}
+.role{display:flex;gap:8px;margin-top:14px}
+.role button{flex:1;padding:9px 10px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.role button.on{background:#fff;color:var(--navy);border-color:#fff}
+
+/* ---------- cadence bars (signature) ---------- */
+.cadence{background:var(--card);border-radius:var(--r);padding:16px 18px 12px;border:1px solid var(--line);margin-bottom:14px}
+.cad-title{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.cad-title h2{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--navy)}
+.cad-title span{font-size:12px;color:var(--muted)}
+.bars{display:flex;gap:8px;align-items:flex-end;height:86px}
+.bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px;cursor:pointer}
+.bar .col{width:100%;border-radius:6px 6px 3px 3px;background:var(--line);min-height:6px;transition:height .35s ease}
+.bar .lbl{font-size:11px;color:var(--muted);font-weight:600}
+.bar.today .lbl{color:var(--estudo)}
+.stats{display:flex;gap:10px;margin-top:14px}
+.stat{flex:1;background:var(--bg);border-radius:10px;padding:10px 12px;text-align:center}
+.stat b{display:block;font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;color:var(--navy);line-height:1.1}
+.stat span{font-size:11.5px;color:var(--muted)}
+
+/* ---------- day card ---------- */
+.card{background:var(--card);border-radius:var(--r);border:1px solid var(--line);padding:18px;margin-bottom:14px}
+.dayhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap}
+.dayhead h2{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--navy)}
+.dayhead input[type=date]{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:14px;color:var(--ink);background:var(--bg)}
+.daytype{font-size:12.5px;color:var(--muted);margin-bottom:14px}
+.item{display:flex;align-items:flex-start;gap:12px;padding:11px 10px;border-radius:10px;margin-bottom:6px;background:var(--bg);border-left:4px solid var(--line);cursor:pointer;user-select:none}
+.item input{margin-top:3px;width:19px;height:19px;accent-color:var(--estudo);flex-shrink:0}
+.item.done{background:#F0F6F1}
+.item .tx b{display:block;font-weight:600;font-size:14.5px}
+.item .tx span{font-size:12px;color:var(--muted)}
+.item.c-estudo{border-left-color:var(--estudo)}
+.item.c-familia{border-left-color:var(--familia)}
+.item.c-fisico{border-left-color:var(--fisico)}
+.item.c-sono{border-left-color:var(--sono)}
+.item.ro{cursor:default;opacity:.92}
+textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;resize:vertical;min-height:64px;margin-top:6px;background:#fff}
+label.small{font-size:12.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-top:14px}
+.mentorbox{border-left:4px solid var(--fisico);background:#FBF4EC;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:14px}
+.mentorbox b{font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--fisico);display:block;margin-bottom:3px}
+.savebar{display:flex;align-items:center;gap:12px;margin-top:16px}
+.btn{background:var(--estudo);color:#fff;border:none;border-radius:10px;padding:11px 22px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer}
+.btn:disabled{opacity:.55;cursor:wait}
+.savemsg{font-size:13px;color:var(--ok);font-weight:600;opacity:0;transition:opacity .3s}
+.savemsg.show{opacity:1}
+
+/* ---------- history grid ---------- */
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px}
+.cell{aspect-ratio:1;border-radius:7px;background:var(--line);display:flex;align-items:center;justify-content:center;font-size:10.5px;color:#fff;font-weight:600;cursor:pointer;position:relative}
+.cell.empty{background:#E6EAF0;color:#AEB6C2}
+.legend{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap}
+.legend div{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.dot{width:13px;height:13px;border-radius:4px}
+
+/* ---------- abas ---------- */
+.tabs{display:flex;gap:6px;margin-bottom:14px;background:#fff;padding:5px;border-radius:12px;border:1px solid var(--line)}
+.tabs button{flex:1;padding:9px 6px;border:none;background:transparent;color:var(--muted);border-radius:9px;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+.tabs button.on{background:var(--navy);color:#fff}
+
+/* ---------- previsto x realizado ---------- */
+.pvr{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}
+.pvr-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.pvr-h b{font-size:14.5px}
+.badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;color:#fff}
+.pvr-row{display:flex;gap:8px;align-items:center;margin-bottom:7px}
+.pvr-row span.tag{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;width:62px;flex-shrink:0;letter-spacing:.3px}
+.pvr-row select,.pvr-row input{border:1px solid var(--line);border-radius:8px;padding:8px 9px;font-family:inherit;font-size:13.5px;background:#fff;color:var(--ink);min-width:0}
+.pvr-row select{flex:1}
+.pvr-row input.num{width:74px;text-align:center}
+.pvr-plan{background:var(--bg);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--muted);margin-bottom:7px}
+.pvr-plan b{color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:6px 12px;font-size:13px;display:flex;align-items:center;gap:7px}
+.chip button{border:none;background:transparent;color:var(--bad);cursor:pointer;font-size:15px;line-height:1;padding:0}
+.wk-day{border-left:4px solid var(--estudo);background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:9px}
+.wk-day h4{font-family:'Barlow Condensed',sans-serif;font-size:17px;text-transform:uppercase;color:var(--navy);margin-bottom:8px;letter-spacing:.4px}
+.loading{text-align:center;padding:60px 20px;color:var(--muted)}
+.spin{width:34px;height:34px;border:4px solid var(--line);border-top-color:var(--estudo);border-radius:50%;margin:0 auto 14px;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.note-share{font-size:12px;color:var(--muted);text-align:center;margin-top:20px}
+@media (prefers-reduced-motion: reduce){.spin{animation:none}.bar .col{transition:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hwrap">
+    <h1>Cadência de Estudos</h1>
+    <div class="hsub">Plano de 4 anos · acompanhamento diário Cesar + mentor</div>
+    <div class="role">
+      <button id="roleCesar" class="on">Sou o Cesar</button>
+      <button id="roleMentor">Sou o mentor</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap" id="app">
+  <div class="loading"><div class="spin"></div>Carregando registros...</div>
+</div>
+
+<script>
+/* ================= dados ================= */
+const PLAN = {
+  weekday: [ /* seg a qui */
+    {id:'fisica', t:'Atividade física ou sono extra', s:'05h-06h · treino seg/qua, sono extra ter/qui', c:'fisico'},
+    {id:'audio1', t:'Áudio no deslocamento', s:'Ida e volta · lei seca, aulas gravadas', c:'estudo'},
+    {id:'flash',  t:'Flashcards no almoço', s:'20 min · revisão espaçada', c:'estudo'},
+    {id:'quest',  t:'Bateria de questões', s:'17h-18h · cronometrada', c:'estudo'},
+    {id:'teoria', t:'Teoria nova', s:'21h-22:30 · conteúdo do ciclo', c:'estudo'},
+    {id:'rev',    t:'Revisão do dia', s:'22:30-23h · flashcards e erros', c:'estudo'},
+    {id:'sono',   t:'Dormir às 23h', s:'Proteção do sono', c:'sono'},
+  ],
+  sexta: [
+    {id:'fisica', t:'Atividade física', s:'05h-06h', c:'fisico'},
+    {id:'audio1', t:'Áudio no deslocamento', s:'Ida e volta', c:'estudo'},
+    {id:'familia',t:'Dia da Família cumprido', s:'A partir das 17h · sem estudo à noite', c:'familia'},
+  ],
+  sabado: [
+    {id:'treino', t:'Treino longo', s:'05h-07h', c:'fisico'},
+    {id:'famM',   t:'Manhã com a família', s:'07h-12h', c:'familia'},
+    {id:'estudo', t:'Bloco de estudo', s:'14h-17h · 1 sábado/mês: simulado completo', c:'estudo'},
+    {id:'famT',   t:'Tarde e noite com a família', s:'17h-20:30', c:'familia'},
+  ],
+  domingo: [
+    {id:'treino', t:'Treino longo', s:'05h-07h', c:'fisico'},
+    {id:'famM',   t:'Manhã com a família', s:'07h-12h', c:'familia'},
+    {id:'estudo', t:'Bloco de estudo', s:'14h-17h', c:'estudo'},
+    {id:'plan',   t:'Planejamento da semana', s:'21h-22h · ciclo de estudos e metas', c:'estudo'},
+  ]
+};
+const HOURS = {audio1:1, flash:0.33, quest:1, teoria:1.5, rev:0.5, estudo:3, plan:1};
+const DAYNAMES = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const KEY = 'cadencia-estudos-cesar';
+
+/* blocos com previsto vs realizado */
+const TRACKED = [
+  {id:'teoria', label:'Teoria',     unit:'páginas',  metaLabel:'páginas', color:'estudo'},
+  {id:'quest',  label:'Questões',   unit:'questões', metaLabel:'questões', color:'estudo'},
+  {id:'flash',  label:'Flashcards', unit:'cards',    metaLabel:'cards',   color:'estudo'}
+];
+const SUBJECTS_DEFAULT = [
+  'Direito Administrativo','Direito Constitucional','AFO','Controle Externo',
+  'Auditoria','Contabilidade Pública','Direito Civil','Direito Processual Civil',
+  'Administração Pública','Português','Raciocínio Lógico','Informática'
+];
+
+let DB = {days:{}, plans:{}, subjects:null};
+let role = 'cesar';
+let selDate = todayISO();
+let tab = 'hoje'; // hoje | planejar | materias
+
+function subjects(){ return (DB.subjects && DB.subjects.length) ? DB.subjects : SUBJECTS_DEFAULT; }
+/* segunda-feira da semana que contém a data */
+function weekKey(iso){
+  const d = dateFromISO(iso); const dow=(d.getDay()+6)%7;
+  d.setDate(d.getDate()-dow);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function planFor(iso){
+  const wk = DB.plans && DB.plans[weekKey(iso)];
+  return (wk && wk[iso]) ? wk[iso] : null;
+}
+
+function todayISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function dateFromISO(iso){ const [y,m,d]=iso.split('-').map(Number); return new Date(y,m-1,d); }
+function dayType(iso){ const g=dateFromISO(iso).getDay(); if(g===0)return'domingo'; if(g===6)return'sabado'; if(g===5)return'sexta'; return'weekday'; }
+function typeLabel(t){ return t==='weekday'?'Rotina de segunda a quinta':t==='sexta'?'Sexta · Dia da Família':t==='sabado'?'Sábado':'Domingo'; }
+function pct(iso){
+  const items = PLAN[dayType(iso)]; const rec = DB.days[iso];
+  if(!rec || !rec.items) return null;
+  const done = items.filter(i=>rec.items[i.id]).length;
+  return Math.round(100*done/items.length);
+}
+function studyHours(iso){
+  const rec = DB.days[iso]; if(!rec||!rec.items) return 0;
+  return PLAN[dayType(iso)].reduce((s,i)=> s + (rec.items[i.id] ? (HOURS[i.id]||0) : 0), 0);
+}
+function colorFor(p){ if(p===null)return null; if(p>=80)return'var(--ok)'; if(p>=50)return'var(--warn)'; return'var(--bad)'; }
+
+/* ================= sincronização (Supabase) ================= */
+const CFG_KEY = 'cadencia-cfg';
+let CFG = null;
+let syncState = 'off'; // off | ok | erro
+
+function loadCfg(){
+  if(location.hash.startsWith('#cfg=')){
+    try{
+      CFG = JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(5)))));
+      localStorage.setItem(CFG_KEY, JSON.stringify(CFG));
+      history.replaceState(null,'',location.pathname);
+    }catch(e){}
+  }
+  if(!CFG){ try{ CFG = JSON.parse(localStorage.getItem(CFG_KEY)); }catch(e){} }
+}
+function sbHeaders(){ return {apikey:CFG.key, Authorization:'Bearer '+CFG.key, 'Content-Type':'application/json'}; }
+async function remoteGet(){
+  const r = await fetch(CFG.url.replace(/\/$/,'')+'/rest/v1/cadencia?select=value&key=eq.main',{headers:sbHeaders()});
+  if(!r.ok) throw new Error('http '+r.status);
+  const j = await r.json();
+  return j.length ? j[0].value : null;
+}
+async function remoteSet(val){
+  const r = await fetch(CFG.url.replace(/\/$/,'')+'/rest/v1/cadencia',{
+    method:'POST',
+    headers:Object.assign(sbHeaders(),{Prefer:'resolution=merge-duplicates'}),
+    body:JSON.stringify({key:'main', value:val, updated_at:new Date().toISOString()})
+  });
+  if(!r.ok) throw new Error('http '+r.status);
+}
+/* mescla o remoto no DB local; em conflito de campo, o local (quem está editando) vence */
+function mergeRemote(remote){
+  if(!remote) return;
+  DB.days = DB.days||{}; DB.plans = DB.plans||{};
+  for(const [iso, rday] of Object.entries(remote.days||{})){
+    if(!DB.days[iso]){ DB.days[iso] = rday; continue; }
+    const l = DB.days[iso];
+    l.items = Object.assign({}, rday.items||{}, l.items||{});
+    l.real  = Object.assign({}, rday.real||{},  l.real||{});
+    ['studied','reason','note','mentorNote'].forEach(f=>{ if(!l[f] && rday[f]) l[f]=rday[f]; });
+  }
+  for(const [wk, rweek] of Object.entries(remote.plans||{})){
+    if(!DB.plans[wk]){ DB.plans[wk] = rweek; continue; }
+    for(const [iso, rday] of Object.entries(rweek)){
+      if(!DB.plans[wk][iso]) DB.plans[wk][iso] = rday;
+    }
+  }
+  if(!DB.subjects && remote.subjects) DB.subjects = remote.subjects;
+}
+function cacheLocal(){ try{ localStorage.setItem(KEY, JSON.stringify(DB)); }catch(e){} }
+
+async function load(){
+  loadCfg();
+  try{ const v = localStorage.getItem(KEY); if(v) DB = JSON.parse(v); }catch(e){}
+  if(CFG){
+    try{
+      const remote = await remoteGet();
+      if(remote){ const local = DB; DB = remote; mergeRemoteFromLocal(local); }
+      syncState='ok';
+    }catch(e){ syncState='erro'; }
+  }
+  cacheLocal();
+  render();
+}
+/* na carga, o remoto é a base e os dias que só existem localmente são preservados */
+function mergeRemoteFromLocal(local){
+  if(!local || !local.days) return;
+  for(const [iso, lday] of Object.entries(local.days)){
+    if(!DB.days[iso]){ DB.days[iso]=lday; }
+  }
+}
+async function save(btn, msg){
+  if(btn){btn.disabled=true;}
+  cacheLocal();
+  if(CFG){
+    try{
+      const remote = await remoteGet();
+      mergeRemote(remote);           // traz o que o outro lado registrou
+      await remoteSet(DB);           // publica a versão mesclada
+      syncState='ok';
+      if(msg){msg.classList.add('show'); setTimeout(()=>msg.classList.remove('show'),1800);}
+    }catch(e){
+      syncState='erro';
+      alert('Salvo neste aparelho, mas a sincronização falhou. Verifique a internet e toque em Salvar novamente.');
+    }
+    cacheLocal();
+  } else {
+    if(msg){msg.classList.add('show'); setTimeout(()=>msg.classList.remove('show'),1800);}
+  }
+  if(btn){btn.disabled=false;}
+}
+/* atualiza ao voltar para o app */
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && CFG){ load(); } });
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+
+/* ================= render ================= */
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  if(!CFG){ app.appendChild(setupCard()); return; }
+  app.appendChild(syncBadge());
+  app.appendChild(tabsBar());
+  if(tab==='planejar'){ app.appendChild(weekPlanCard()); return; }
+  if(tab==='materias'){ app.appendChild(subjectsCard()); return; }
+  app.appendChild(cadenceCard());
+  app.appendChild(dayCard());
+  app.appendChild(historyCard());
+  const shareCard = document.createElement('div'); shareCard.className='card';
+  shareCard.innerHTML = `<div class="cad-title"><h2 style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--navy)">Enviar ao mentor</h2></div>
+  <p style="font-size:13.5px;color:var(--muted);margin-bottom:12px">Gera um resumo dos últimos 7 dias (cumprimento, horas, conteúdo estudado e justificativas) pronto para enviar no WhatsApp.</p>`;
+  const shareBtn = document.createElement('button'); shareBtn.className='btn';
+  shareBtn.style.background='var(--familia)';
+  shareBtn.textContent='Gerar resumo para WhatsApp';
+  shareBtn.onclick = shareWeek;
+  shareCard.appendChild(shareBtn);
+  const invBtn = document.createElement('button'); invBtn.className='btn';
+  invBtn.style.cssText='background:var(--navy-2);margin-left:10px';
+  invBtn.textContent='Convidar mentor (link do app)';
+  invBtn.onclick = inviteMentor;
+  shareCard.appendChild(invBtn);
+  app.appendChild(shareCard);
+  const n = document.createElement('div');
+  n.className='note-share';
+  n.textContent = 'Os registros são sincronizados entre os aparelhos conectados. Mantenha o link de convite restrito a você e ao mentor.';
+  app.appendChild(n);
+}
+
+function tabsBar(){
+  const el = document.createElement('div'); el.className='tabs';
+  const defs = [['hoje','Dia a dia'],['planejar','Planejar semana'],['materias','Matérias']];
+  defs.forEach(([id,label])=>{
+    if(id==='materias' && role==='mentor') return;
+    const b=document.createElement('button'); b.textContent=label;
+    if(tab===id) b.classList.add('on');
+    b.onclick=()=>{ tab=id; render(); window.scrollTo({top:0}); };
+    el.appendChild(b);
+  });
+  return el;
+}
+
+/* ---------- planejamento semanal ---------- */
+function weekPlanCard(){
+  const el = document.createElement('div'); el.className='card';
+  const wk = weekKey(selDate);
+  DB.plans = DB.plans||{}; DB.plans[wk] = DB.plans[wk]||{};
+  const plan = DB.plans[wk];
+  const start = dateFromISO(wk);
+  const end = new Date(start); end.setDate(end.getDate()+6);
+  const fmt = d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+
+  el.innerHTML = `<div class="cad-title"><h2>Planejar semana</h2><span>${fmt(start)} a ${fmt(end)}</span></div>
+  <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px">Defina o previsto de cada dia. Domingo, no bloco 21h-22h, é o momento ideal para isso. Depois é só registrar o realizado no dia a dia.</p>`;
+
+  if(role==='mentor'){
+    const w=document.createElement('div'); w.className='mentorbox';
+    w.innerHTML='<b>Modo mentor</b>O planejamento é definido pelo Cesar. Aqui você acompanha o previsto de cada dia.';
+    el.appendChild(w);
+  }
+
+  const nav = document.createElement('div'); nav.style.cssText='display:flex;gap:8px;margin-bottom:14px';
+  [['◀ Semana anterior',-7],['Próxima semana ▶',7]].forEach(([t,delta])=>{
+    const b=document.createElement('button'); b.className='btn';
+    b.style.cssText='flex:1;background:var(--bg);color:var(--navy);font-size:13px;padding:8px';
+    b.textContent=t;
+    b.onclick=()=>{ const d=dateFromISO(selDate); d.setDate(d.getDate()+delta);
+      selDate=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      render(); };
+    nav.appendChild(b);
+  });
+  el.appendChild(nav);
+
+  for(let i=0;i<7;i++){
+    const d=new Date(start); d.setDate(d.getDate()+i);
+    const iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const type=dayType(iso);
+    const box=document.createElement('div'); box.className='wk-day';
+    if(type==='sexta'){ box.style.borderLeftColor='var(--familia)'; }
+    const h=document.createElement('h4');
+    h.textContent=DAYNAMES[d.getDay()]+' '+fmt(d)+(type==='sexta'?' · Dia da Família':'');
+    box.appendChild(h);
+    if(type==='sexta'){
+      const p=document.createElement('div'); p.style.cssText='font-size:13px;color:var(--familia);font-weight:600';
+      p.textContent='Sem estudo previsto. Dia protegido.';
+      box.appendChild(p); el.appendChild(box); continue;
+    }
+    plan[iso]=plan[iso]||{};
+    TRACKED.forEach(t=>{
+      plan[iso][t.id]=plan[iso][t.id]||{tema:'',meta:''};
+      const row=document.createElement('div'); row.className='pvr-row';
+      const tag=document.createElement('span'); tag.className='tag'; tag.textContent=t.label;
+      const sel=document.createElement('select');
+      sel.innerHTML='<option value="">Tema...</option>'+subjects().map(s=>`<option${plan[iso][t.id].tema===s?' selected':''}>${s}</option>`).join('');
+      sel.disabled = (role==='mentor');
+      sel.onchange=()=>{ plan[iso][t.id].tema=sel.value; };
+      const num=document.createElement('input'); num.className='num'; num.type='number'; num.min='0';
+      num.placeholder=t.unit==='páginas'?'págs':'qtd';
+      num.value=plan[iso][t.id].meta||'';
+      num.disabled = (role==='mentor');
+      num.oninput=()=>{ plan[iso][t.id].meta=num.value; };
+      row.appendChild(tag); row.appendChild(sel); row.appendChild(num);
+      box.appendChild(row);
+    });
+    el.appendChild(box);
+  }
+
+  if(role!=='mentor'){
+    const bar=document.createElement('div'); bar.className='savebar';
+    const btn=document.createElement('button'); btn.className='btn'; btn.textContent='Salvar planejamento';
+    const msg=document.createElement('span'); msg.className='savemsg'; msg.textContent='Salvo ✓';
+    btn.onclick=()=>{ save(btn,msg); };
+    bar.appendChild(btn); bar.appendChild(msg);
+    el.appendChild(bar);
+    const cp=document.createElement('button'); cp.className='btn';
+    cp.style.cssText='background:var(--bg);color:var(--navy);margin-top:10px;font-size:13px;padding:9px 14px';
+    cp.textContent='Copiar plano da semana anterior';
+    cp.onclick=()=>{
+      const prev=new Date(start); prev.setDate(prev.getDate()-7);
+      const pk=prev.getFullYear()+'-'+String(prev.getMonth()+1).padStart(2,'0')+'-'+String(prev.getDate()).padStart(2,'0');
+      const src=DB.plans[pk];
+      if(!src){ alert('Não há plano salvo na semana anterior.'); return; }
+      Object.entries(src).forEach(([piso,pday])=>{
+        const d=dateFromISO(piso); d.setDate(d.getDate()+7);
+        const niso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        plan[niso]=JSON.parse(JSON.stringify(pday));
+      });
+      render();
+    };
+    el.appendChild(cp);
+  }
+  return el;
+}
+
+/* ---------- matérias ---------- */
+function subjectsCard(){
+  const el=document.createElement('div'); el.className='card';
+  el.innerHTML=`<div class="cad-title"><h2>Minhas matérias</h2></div>
+  <p style="font-size:13.5px;color:var(--muted);margin-bottom:12px">Esta lista alimenta os temas do planejamento. Ajuste conforme o edital do seu concurso alvo.</p>`;
+  const list=document.createElement('div'); list.className='chips';
+  DB.subjects = DB.subjects || SUBJECTS_DEFAULT.slice();
+  DB.subjects.forEach((s,i)=>{
+    const c=document.createElement('div'); c.className='chip';
+    c.innerHTML='<span>'+s.replace(/</g,'&lt;')+'</span>';
+    const x=document.createElement('button'); x.textContent='×'; x.title='Remover';
+    x.onclick=()=>{ DB.subjects.splice(i,1); render(); };
+    c.appendChild(x); list.appendChild(c);
+  });
+  el.appendChild(list);
+  const row=document.createElement('div'); row.style.cssText='display:flex;gap:8px;margin-top:14px';
+  const inp=document.createElement('input');
+  inp.placeholder='Nova matéria...';
+  inp.style.cssText='flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px';
+  const add=document.createElement('button'); add.className='btn'; add.textContent='Adicionar';
+  const doAdd=()=>{ const v=inp.value.trim();
+    if(v && !DB.subjects.includes(v)){ DB.subjects.push(v); render(); } };
+  add.onclick=doAdd;
+  inp.onkeydown=(e)=>{ if(e.key==='Enter') doAdd(); };
+  row.appendChild(inp); row.appendChild(add);
+  el.appendChild(row);
+  const bar=document.createElement('div'); bar.className='savebar';
+  const btn=document.createElement('button'); btn.className='btn'; btn.textContent='Salvar matérias';
+  const msg=document.createElement('span'); msg.className='savemsg'; msg.textContent='Salvo ✓';
+  btn.onclick=()=>{ save(btn,msg); };
+  bar.appendChild(btn); bar.appendChild(msg);
+  el.appendChild(bar);
+  return el;
+}
+
+function syncBadge(){
+  const b = document.createElement('div');
+  const map = {ok:['#F0F6F1','var(--ok)','Sincronizado na nuvem'], erro:['#FBEeeC','var(--bad)','Sem conexão: salvando só neste aparelho'], off:['#EEF1F5','var(--muted)','Sincronização não configurada']};
+  const [bg,c,t] = map[syncState]||map.off;
+  b.style.cssText = 'background:'+bg+';color:'+c+';border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:600;margin-bottom:12px;text-align:center';
+  b.textContent = t;
+  return b;
+}
+
+function inviteMentor(){
+  const cfg64 = btoa(unescape(encodeURIComponent(JSON.stringify(CFG))));
+  const link = location.origin + location.pathname + '#cfg=' + cfg64;
+  const txt = 'Convite: acompanhamento do meu plano de estudos para concurso.\n\n1. Abra este link no celular:\n'+link+'\n\n2. No navegador, use "Adicionar à tela inicial" para instalar como app.\n3. Dentro do app, selecione "Sou o mentor".';
+  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
+}
+
+function setupCard(){
+  const el = document.createElement('div'); el.className='card';
+  el.innerHTML = `<div class="cad-title"><h2 style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--navy)">Configurar sincronização</h2></div>
+  <p style="font-size:14px;color:var(--muted);margin-bottom:6px">Passo único, feito só por você (o mentor entra depois pelo link de convite):</p>
+  <ol style="font-size:13.5px;color:var(--ink);margin:0 0 14px 18px;line-height:1.7">
+    <li>Crie um projeto gratuito em <b>supabase.com</b></li>
+    <li>No <b>SQL Editor</b>, cole e execute o script que veio junto com o app (arquivo <b>setup-supabase.sql</b>)</li>
+    <li>Em <b>Settings → API</b>, copie a <b>Project URL</b> e a chave <b>anon public</b> e cole abaixo</li>
+  </ol>
+  <label class="small">Project URL</label>`;
+  const inUrl = document.createElement('input');
+  inUrl.placeholder='https://xxxx.supabase.co';
+  inUrl.style.cssText='width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;margin-top:6px';
+  el.appendChild(inUrl);
+  const l2 = document.createElement('label'); l2.className='small'; l2.textContent='Chave anon public';
+  el.appendChild(l2);
+  const inKey = document.createElement('input');
+  inKey.placeholder='eyJhbGciOi...';
+  inKey.style.cssText=inUrl.style.cssText;
+  el.appendChild(inKey);
+  const bar = document.createElement('div'); bar.className='savebar';
+  const btn = document.createElement('button'); btn.className='btn'; btn.textContent='Conectar';
+  const msg = document.createElement('span'); msg.style.cssText='font-size:13px;color:var(--bad);font-weight:600';
+  btn.onclick = async ()=>{
+    btn.disabled=true; msg.textContent='';
+    CFG = {url:inUrl.value.trim(), key:inKey.value.trim()};
+    try{
+      await remoteGet();
+      localStorage.setItem(CFG_KEY, JSON.stringify(CFG));
+      await load();
+    }catch(e){
+      CFG=null; msg.textContent='Não conectou. Confira a URL, a chave e se o script SQL foi executado.';
+    }
+    btn.disabled=false;
+  };
+  bar.appendChild(btn); bar.appendChild(msg);
+  el.appendChild(bar);
+  const skip = document.createElement('p');
+  skip.style.cssText='font-size:12.5px;color:var(--muted);margin-top:14px';
+  skip.innerHTML='Prefere usar sem sincronização por enquanto? <a href="#" id="skipSync" style="color:var(--estudo)">Continuar só neste aparelho</a>';
+  el.appendChild(skip);
+  setTimeout(()=>{ const a=document.getElementById('skipSync'); if(a) a.onclick=(e)=>{e.preventDefault(); CFG={skip:true}; renderLocalOnly();}; },0);
+  return el;
+}
+function renderLocalOnly(){ CFG=null; syncState='off';
+  const app=document.getElementById('app'); app.innerHTML='';
+  app.appendChild(syncBadge()); app.appendChild(cadenceCard()); app.appendChild(dayCard()); app.appendChild(historyCard());
+  const n=document.createElement('div'); n.className='note-share';
+  n.textContent='Registros salvos apenas neste aparelho. Configure a sincronização depois recarregando a página.';
+  app.appendChild(n);
+}
+
+function shareWeek(){
+  const t = dateFromISO(todayISO());
+  let lines = ['*Cadência de Estudos - resumo dos últimos 7 dias*',''];
+  let totalH = 0;
+  for(let i=6;i>=0;i--){
+    const d=new Date(t); d.setDate(d.getDate()-i);
+    const iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const p=pct(iso); const h=studyHours(iso); totalH+=h;
+    const rec=DB.days[iso]||{};
+    const name=DAYNAMES[d.getDay()].slice(0,3)+' '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+    lines.push('*'+name+'*: '+(p===null?'sem registro':p+'% cumprido, '+h.toFixed(1).replace('.',',')+'h de estudo'));
+    const plan = planFor(iso);
+    TRACKED.forEach(t=>{
+      const pl = plan && plan[t.id] ? plan[t.id] : null;
+      const rl = rec.real && rec.real[t.id] ? rec.real[t.id] : null;
+      if(!pl && !rl) return;
+      if(!(pl&&(pl.tema||pl.meta)) && !(rl&&(rl.tema||rl.feito))) return;
+      const prev = pl&&(pl.tema||pl.meta) ? (pl.tema||'tema livre')+(pl.meta?' ('+pl.meta+' '+t.metaLabel+')':'') : 'sem plano';
+      const real = rl&&(rl.tema||rl.feito) ? (rl.tema||'sem tema')+(rl.feito?' ('+rl.feito+' '+t.metaLabel+')':'') : 'não realizado';
+      lines.push('  '+t.label+': previsto '+prev+' | feito '+real);
+    });
+    if(rec.studied) lines.push('  Obs.: '+rec.studied);
+    const jr = rec.reason||rec.note;
+    if(jr) lines.push('  Justificativa: '+jr);
+  }
+  lines.push('');
+  lines.push('*Total de estudo na janela: '+totalH.toFixed(1).replace('.',',')+'h* (meta semanal: 19h)');
+  const url='https://wa.me/?text='+encodeURIComponent(lines.join('\n'));
+  window.open(url,'_blank');
+}
+
+function cadenceCard(){
+  const el = document.createElement('div'); el.className='cadence';
+  // últimos 7 dias terminando hoje
+  const days=[]; const t=dateFromISO(todayISO());
+  for(let i=6;i>=0;i--){ const d=new Date(t); d.setDate(d.getDate()-i);
+    days.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')); }
+  // horas de estudo na semana corrente (a partir de segunda)
+  const dow=(t.getDay()+6)%7; let wk=0;
+  for(let i=0;i<=dow;i++){ const d=new Date(t); d.setDate(d.getDate()-(dow-i));
+    wk += studyHours(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')); }
+  // sequência de dias com >=80%
+  let streak=0;
+  for(let i=0;;i++){ const d=new Date(t); d.setDate(d.getDate()-i);
+    const iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const p=pct(iso);
+    if(p!==null && p>=80){streak++;} else if(i===0 && p===null){continue;} else break;
+    if(i>365)break; }
+  // média 7 dias
+  const vals = days.map(pct).filter(p=>p!==null);
+  const avg = vals.length? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+
+  el.innerHTML = `<div class="cad-title"><h2>Cadência dos últimos 7 dias</h2><span>toque numa barra para abrir o dia</span></div>`;
+  const bars = document.createElement('div'); bars.className='bars';
+  days.forEach(iso=>{
+    const p = pct(iso);
+    const b = document.createElement('div'); b.className='bar'+(iso===todayISO()?' today':'');
+    const col = document.createElement('div'); col.className='col';
+    col.style.height = (p===null?6:Math.max(8,p*0.8))+'px';
+    if(p!==null) col.style.background = colorFor(p);
+    const lbl = document.createElement('div'); lbl.className='lbl';
+    lbl.textContent = DAYNAMES[dateFromISO(iso).getDay()].slice(0,3);
+    b.appendChild(col); b.appendChild(lbl);
+    b.onclick = ()=>{ selDate = iso; render(); window.scrollTo({top:0}); };
+    bars.appendChild(b);
+  });
+  el.appendChild(bars);
+  const st = document.createElement('div'); st.className='stats';
+  st.innerHTML = `
+    <div class="stat"><b>${wk.toFixed(1).replace('.',',')}h</b><span>estudo esta semana<br>(meta 19h)</span></div>
+    <div class="stat"><b>${avg}%</b><span>cumprimento<br>média 7 dias</span></div>
+    <div class="stat"><b>${streak}</b><span>dias seguidos<br>com 80% ou mais</span></div>`;
+  el.appendChild(st);
+  return el;
+}
+
+function dayCard(){
+  const el = document.createElement('div'); el.className='card';
+  const type = dayType(selDate);
+  const rec = DB.days[selDate] || {items:{}, note:'', mentorNote:''};
+  const d = dateFromISO(selDate);
+
+  const head = document.createElement('div'); head.className='dayhead';
+  head.innerHTML = `<h2>${DAYNAMES[d.getDay()]}, ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}</h2>`;
+  const inp = document.createElement('input'); inp.type='date'; inp.value=selDate;
+  inp.onchange = ()=>{ if(inp.value){selDate=inp.value; render();} };
+  head.appendChild(inp);
+  el.appendChild(head);
+
+  const sub = document.createElement('div'); sub.className='daytype';
+  sub.textContent = typeLabel(type) + (role==='mentor' ? ' · modo mentor (leitura + comentário)' : '');
+  el.appendChild(sub);
+
+  PLAN[type].forEach(it=>{
+    const row = document.createElement('div');
+    row.className = 'item c-'+it.c + (rec.items[it.id]?' done':'') + (role==='mentor'?' ro':'');
+    const cb = document.createElement('input'); cb.type='checkbox';
+    cb.checked = !!rec.items[it.id];
+    cb.disabled = (role==='mentor');
+    const tx = document.createElement('div'); tx.className='tx';
+    tx.innerHTML = `<b>${it.t}</b><span>${it.s}</span>`;
+    row.appendChild(cb); row.appendChild(tx);
+    if(role!=='mentor'){
+      row.onclick = (e)=>{ if(e.target!==cb) cb.checked=!cb.checked;
+        rec.items[it.id]=cb.checked; DB.days[selDate]=rec;
+        row.classList.toggle('done', cb.checked); };
+    }
+    el.appendChild(row);
+  });
+
+  // ----- previsto vs realizado -----
+  if(type!=='sexta'){
+    const plan = planFor(selDate);
+    const lp = document.createElement('label'); lp.className='small';
+    lp.textContent='Previsto vs. realizado';
+    el.appendChild(lp);
+    rec.real = rec.real || {};
+    if(!plan && role==='cesar'){
+      const w=document.createElement('div'); w.className='pvr-plan';
+      w.innerHTML='Sem plano definido para este dia. Vá em <b>Planejar semana</b> para registrar o previsto, ou preencha só o realizado abaixo.';
+      el.appendChild(w);
+    }
+    TRACKED.forEach(t=>{
+      const p = plan && plan[t.id] ? plan[t.id] : null;
+      rec.real[t.id] = rec.real[t.id] || {tema:'', feito:''};
+      const r = rec.real[t.id];
+      const box=document.createElement('div'); box.className='pvr';
+      const head=document.createElement('div'); head.className='pvr-h';
+      const nm=document.createElement('b'); nm.textContent=t.label;
+      head.appendChild(nm);
+      // badge de cumprimento
+      if(p && p.meta && r.feito!==''){
+        const ratio = Number(r.feito)/Number(p.meta);
+        const bd=document.createElement('span'); bd.className='badge';
+        bd.style.background = ratio>=1?'var(--ok)':ratio>=0.6?'var(--warn)':'var(--bad)';
+        bd.textContent = Math.round(ratio*100)+'% da meta';
+        head.appendChild(bd);
+      }
+      box.appendChild(head);
+      if(p && (p.tema||p.meta)){
+        const pl=document.createElement('div'); pl.className='pvr-plan';
+        pl.innerHTML='Previsto: <b>'+(p.tema||'tema livre')+'</b>'+(p.meta?' · <b>'+p.meta+' '+t.metaLabel+'</b>':'');
+        box.appendChild(pl);
+      }
+      if(role==='cesar'){
+        const row=document.createElement('div'); row.className='pvr-row';
+        const tag=document.createElement('span'); tag.className='tag'; tag.textContent='Feito';
+        const sel=document.createElement('select');
+        const opts = subjects().slice();
+        if(p && p.tema && !opts.includes(p.tema)) opts.unshift(p.tema);
+        sel.innerHTML='<option value="">Tema...</option>'+opts.map(s=>`<option${r.tema===s?' selected':''}>${s}</option>`).join('');
+        sel.onchange=()=>{ r.tema=sel.value; DB.days[selDate]=rec; };
+        const num=document.createElement('input'); num.className='num'; num.type='number'; num.min='0';
+        num.placeholder=t.unit==='páginas'?'págs':'qtd';
+        num.value=r.feito||'';
+        num.oninput=()=>{ r.feito=num.value; DB.days[selDate]=rec; };
+        row.appendChild(tag); row.appendChild(sel); row.appendChild(num);
+        box.appendChild(row);
+        if(p && p.tema && r.tema && r.tema!==p.tema){
+          const alert=document.createElement('div');
+          alert.style.cssText='font-size:12px;color:var(--warn);font-weight:600;margin-top:5px';
+          alert.textContent='Tema diferente do previsto. Vale justificar abaixo.';
+          box.appendChild(alert);
+        }
+      } else {
+        const rd=document.createElement('div'); rd.className='pvr-plan';
+        rd.style.background='#F0F6F1';
+        rd.innerHTML = (r.tema||r.feito)
+          ? 'Realizado: <b>'+(r.tema||'sem tema')+'</b>'+(r.feito?' · <b>'+r.feito+' '+t.metaLabel+'</b>':'')
+          : '<i>Sem registro de realizado.</i>';
+        box.appendChild(rd);
+      }
+      el.appendChild(box);
+    });
+  }
+
+  // registro de estudo do Cesar
+  const l1 = document.createElement('label'); l1.className='small'; l1.textContent='Observações do dia';
+  el.appendChild(l1);
+  if(role==='cesar'){
+    const ta = document.createElement('textarea'); ta.value = rec.studied||'';
+    ta.placeholder='Matérias, tópicos e quantidade de questões. Ex.: Dir. Administrativo (licitações) + 40 questões AFO...';
+    ta.oninput = ()=>{ rec.studied=ta.value; DB.days[selDate]=rec; };
+    el.appendChild(ta);
+  } else {
+    const box = document.createElement('div'); box.className='mentorbox';
+    box.innerHTML = `<b>Conteúdo estudado</b>${rec.studied ? rec.studied.replace(/</g,'&lt;') : '<i>Sem registro de conteúdo neste dia.</i>'}`;
+    el.appendChild(box);
+  }
+
+  // justificativa
+  const lj = document.createElement('label'); lj.className='small'; lj.textContent='Justificativa (se algo não foi cumprido)';
+  el.appendChild(lj);
+  const legacyReason = rec.reason || rec.note || '';
+  if(role==='cesar'){
+    const ta = document.createElement('textarea'); ta.value = legacyReason;
+    ta.placeholder='Por que algum bloco não aconteceu: imprevisto no trabalho, filho doente, cansaço... Honestidade aqui é o que permite ajustar o plano.';
+    ta.oninput = ()=>{ rec.reason=ta.value; DB.days[selDate]=rec; };
+    el.appendChild(ta);
+  } else {
+    const box = document.createElement('div'); box.className='mentorbox';
+    box.innerHTML = `<b>Justificativa do Cesar</b>${legacyReason ? legacyReason.replace(/</g,'&lt;') : '<i>Sem justificativas neste dia.</i>'}`;
+    el.appendChild(box);
+  }
+
+  // comentário do mentor
+  const l2 = document.createElement('label'); l2.className='small'; l2.textContent='Comentário do mentor';
+  el.appendChild(l2);
+  if(role==='mentor'){
+    const ta = document.createElement('textarea'); ta.value = rec.mentorNote||'';
+    ta.placeholder='Feedback, cobrança, ajuste de rota...';
+    ta.oninput = ()=>{ rec.mentorNote=ta.value; DB.days[selDate]=rec; };
+    el.appendChild(ta);
+  } else {
+    const box = document.createElement('div'); box.className='mentorbox';
+    box.innerHTML = `<b>Mentor</b>${rec.mentorNote ? rec.mentorNote.replace(/</g,'&lt;') : '<i>Ainda sem comentário do mentor neste dia.</i>'}`;
+    el.appendChild(box);
+  }
+
+  const bar = document.createElement('div'); bar.className='savebar';
+  const btn = document.createElement('button'); btn.className='btn';
+  btn.textContent = role==='mentor' ? 'Salvar comentário' : 'Salvar dia';
+  const msg = document.createElement('span'); msg.className='savemsg'; msg.textContent='Salvo ✓';
+  btn.onclick = ()=>{ DB.days[selDate]=rec; save(btn,msg).then(render); };
+  bar.appendChild(btn); bar.appendChild(msg);
+  el.appendChild(bar);
+  return el;
+}
+
+function historyCard(){
+  const el = document.createElement('div'); el.className='card';
+  el.innerHTML = `<div class="cad-title"><h2 style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--navy)">Últimas 4 semanas</h2></div>`;
+  const grid = document.createElement('div'); grid.className='grid';
+  const t = dateFromISO(todayISO());
+  const dow=(t.getDay()+6)%7; // seg=0
+  const start = new Date(t); start.setDate(start.getDate()-dow-21);
+  for(let i=0;i<28;i++){
+    const d=new Date(start); d.setDate(d.getDate()+i);
+    const iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const p=pct(iso);
+    const c=document.createElement('div'); c.className='cell'+(p===null?' empty':'');
+    c.textContent=d.getDate();
+    if(p!==null) c.style.background=colorFor(p);
+    if(d>t){ c.style.visibility='hidden'; }
+    c.title = iso + (p===null?'':' · '+p+'%');
+    c.onclick=()=>{ selDate=iso; render(); window.scrollTo({top:0}); };
+    grid.appendChild(c);
+  }
+  el.appendChild(grid);
+  const lg=document.createElement('div'); lg.className='legend';
+  lg.innerHTML=`<div><span class="dot" style="background:var(--ok)"></span>80% ou mais</div>
+  <div><span class="dot" style="background:var(--warn)"></span>50 a 79%</div>
+  <div><span class="dot" style="background:var(--bad)"></span>abaixo de 50%</div>
+  <div><span class="dot" style="background:#E6EAF0"></span>sem registro</div>`;
+  el.appendChild(lg);
+  return el;
+}
+
+/* ================= role toggle ================= */
+document.getElementById('roleCesar').onclick=()=>{role='cesar';
+  document.getElementById('roleCesar').classList.add('on');
+  document.getElementById('roleMentor').classList.remove('on'); render();};
+document.getElementById('roleMentor').onclick=()=>{role='mentor';
+  document.getElementById('roleMentor').classList.add('on');
+  document.getElementById('roleCesar').classList.remove('on'); render();};
+
+load();
+</script>
+</body>
+</html>
